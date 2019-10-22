@@ -45,8 +45,7 @@ def buildStump(dataArr, classLabels, D):
                 errArr = np.mat(np.ones((m, 1)))
                 errArr[predictedVal == labelMatrix] = 0
                 weightedErr = D.T * errArr
-                print("split: dim %d, thresh %.2f, tresh inequal: %s, the weighted error is %.3f"
-                      %(i, threshVal, inequal, weightedErr))
+                # print("split: dim %d, thresh %.2f, tresh inequal: %s, the weighted error is %.3f" %(i, threshVal, inequal, weightedErr))
                 if weightedErr < minError:
                     minError = weightedErr
                     bestClassEst = predictedVal[:, :]
@@ -67,24 +66,71 @@ def adaBoostTrainDS(dataArr, classLabels, numIt = 40):
     dataMatrix = np.mat(dataArr)
     labelMatrix = np.mat(classLabels)
     m = np.shape(dataMatrix)[0]
-    D = np.mat(np.zeros((m, 1))/m)
+    D = np.mat(np.ones((m, 1))/m)
     aggClassEst = np.mat(np.zeros((m, 1)))
     for i in range(numIt):
         bestStump, error, classEst = buildStump(dataArr, classLabels, D)
-        print("D: " + D.T)
+        # print(D.T)
         alpha = float(0.5 * math.log((1.0 - error) / max(error, 1e-16)))
         bestStump['alpha'] = alpha
         weakClassArr.append(bestStump)
-        print("classEst" + classEst.T)
-        expon = np.multiply(-1 * )
+        # print(classEst.T)
+        expon = np.multiply(-1 * alpha * labelMatrix.T, classEst)
+        D = np.multiply(D, np.exp(expon))
+        D = D / D.sum()
+        aggClassEst += alpha * classEst
+        # print(aggClassEst)
+        aggErrors = np.multiply(np.sign(aggClassEst) != labelMatrix.T, np.ones((m, 1)))
+        errorRate = aggErrors.sum() / m
+        print("Total error: %f" % errorRate)
+        if errorRate == 0.0:
+            break;
+    return weakClassArr
+
+def adaClassify(datToClass, classiferArr):
+    """
+    AdaBoost 分类函数
+    :param datToClass: 待分类数据集
+    :param classiferArr: 弱分类器集合
+    :return: 分类结果
+    """
+    dataMatrix = np.mat(datToClass)
+    m = np.shape(dataMatrix)[0]
+    aggClassEst = np.zeros((m, 1))
+    for i in range(len(classiferArr)):
+        classEst = stumpClassify(dataMatrix, classiferArr[i]["dim"], classiferArr[i]["thresh"], classiferArr[i]["ineq"])
+        aggClassEst += classiferArr[i]["alpha"] * classEst
+    return np.sign(aggClassEst)
+
+def loadDataSet(fileName):
+    numFeat = len(open(fileName).readline().split('\t'))
+    # print(numFeat)
+    dataMat = []
+    labelMat = []
+    fr = open(fileName)
+    for line in fr.readlines():
+        lineArr = []
+        curLine = line.strip().split('\t')
+        for i in range(numFeat - 1):
+            lineArr.append(float(curLine[i]))
+        dataMat.append(lineArr)
+        labelMat.append(float(curLine[-1]))
+    return  dataMat, labelMat
+
+dataMat, classLabels = loadDataSet("adaboost/horseColicTraining2.txt")
+
+classiferArray = adaBoostTrainDS(dataMat, classLabels, 100)
+
+testMat, testLabels = loadDataSet("adaboost/horseColicTest2.txt")
+
+prediction = adaClassify(testLabels, classiferArray)
+
+m = np.shape(np.mat(testMat))[0]
+errArr = np.mat(np.ones((m, 1)))
+err = errArr[prediction != np.mat(testLabels).T].sum()
+print(float(err) / float(m))
 
 
-
-
-dataMat, classLabels = loadSimpData()
-
-D = np.mat(np.ones((5,1))/5)
-print(buildStump(dataMat, classLabels, D))
 """
 m, n = np.shape(dataMat)
 xcord0 = []
