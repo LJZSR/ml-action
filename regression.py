@@ -49,7 +49,11 @@ def lwlrTest(testArr, xArr, yArr, k = 1.0):
         yHat[i] = lwlr(testArr[i], xArr, yArr, k)
     return yHat
 
+def rssError(yArr, yHatArr):
+    return ((yArr - yHatArr) ** 2).sum()
 
+
+"""
 xArr, yArr = loadDataSet("regression/ex0.txt")
 xMat = np.mat(xArr)
 yHat = lwlrTest(xArr, xArr, yArr, 0.003)
@@ -60,3 +64,11 @@ ax = fig.add_subplot(111)
 ax.plot(xSort[:, 1], yHat[srtInd])
 ax.scatter(xMat[:, 1].flatten().A[0], np.mat(yArr).T.flatten().A[0], s=2, c='red')
 plt.show()
+"""
+abX, abY = loadDataSet("regression/abalone.txt")
+yHat01 = lwlrTest(abX[:99], abX[:99], abY[:99], 0.1)
+yHat1 = lwlrTest(abX[:99], abX[:99], abY[:99], 1)
+yHat10 = lwlrTest(abX[:99], abX[:99], abY[:99], 10)
+print(rssError(abY[:99], yHat01))
+print(rssError(abY[:99], yHat1))
+print(rssError(abY[:99], yHat10))
