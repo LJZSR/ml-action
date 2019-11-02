@@ -100,6 +100,43 @@ def ridgeTest(xArr, yArr):
         wMat[i, :] = ws.T
     return wMat
 
+def stageWise(xArr, yArr, eps=0.1, numIt=100):
+    """
+    前向逐步回归
+    :param xArr:
+    :param yArr:
+    :param eps:
+    :param numIt:
+    :return:
+    """
+    xMat = np.mat(xArr)
+    yMat = np.mat(yArr).T
+    yMean = np.mean(yMat, 0)
+    yMat = yMat - yMean
+    xMean = np.mean(xMat, 0)
+    xVar = np.var(xMat, 0)
+    xMat = (xMat - xMean) / xVar
+    m, n = np.shape(xMat)
+    returnMat = np.zeros((numIt, n))
+    ws = np.zeros((n, 1))
+    wsTest = ws.copy()
+    wsMax = ws.copy()
+    for i in range(numIt):
+        print(ws.T)
+        lowestErr = float("inf")
+        for j in range(n):
+            for sign in [-1, 1]:
+                wsTest = ws.copy()
+                wsTest[j] += sign * eps
+                yTest = xMat * wsTest
+                rssE = rssError(yMat.A, yTest.A)
+                if rssE < lowestErr:
+                    lowestErr = rssE
+                    wsMax = wsTest
+        ws = wsMax.copy()
+        returnMat[i, :] = ws.T
+    return returnMat
+
 
 
 """
@@ -121,10 +158,28 @@ print(rssError(abY[:99], yHat01))
 print(rssError(abY[:99], yHat1))
 print(rssError(abY[:99], yHat10))
 """
+
+"""
 abX, abY = loadDataSet("regression/abalone.txt")
 ridgeWeights = ridgeTest(abX, abY)
 print(ridgeWeights)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.plot(ridgeWeights)
+plt.show()
+"""
+
+xArr, yArr = loadDataSet("regression/abalone.txt")
+weights = stageWise(xArr, yArr, 0.001, 5000)
+xMat = np.mat(xArr)
+yMat = np.mat(yArr).T
+yMean = np.mean(yMat, 0)
+yMat = yMat - yMean
+xMean = np.mean(xMat, 0)
+xVar = np.var(xMat, 0)
+xMat = (xMat - xMean) / xVar
+print(standRegress(xMat, yMat.T).T)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+ax.plot(weights)
 plt.show()
