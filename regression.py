@@ -16,6 +16,7 @@ def loadDataSet(filename):
         labelMat.append(float(curLine[-1]))
     return dataMat, labelMat
 
+
 def standRegress(xArr, yArr):
     """
     线性回归
@@ -33,7 +34,7 @@ def standRegress(xArr, yArr):
     return ws
 
 
-def lwlr(testPoint, xArr, yArr, k = 1.0):
+def lwlr(testPoint, xArr, yArr, k=1.0):
     """
     局部加权线性回归
     :param testPoint:
@@ -56,12 +57,14 @@ def lwlr(testPoint, xArr, yArr, k = 1.0):
         ws = xTx.I * (xMat.T * weights * yMat)
     return testPoint * ws
 
-def lwlrTest(testArr, xArr, yArr, k = 1.0):
+
+def lwlrTest(testArr, xArr, yArr, k=1.0):
     m = np.shape(testArr)[0]
     yHat = np.zeros(m)
     for i in range(m):
         yHat[i] = lwlr(testArr[i], xArr, yArr, k)
     return yHat
+
 
 def rssError(yArr, yHatArr):
     return ((yArr - yHatArr) ** 2).sum()
@@ -85,6 +88,7 @@ def ridgeRegress(xArr, yArr, lam=0.2):
         ws = denom.I * (xMat.T * yMat)
     return ws
 
+
 def ridgeTest(xArr, yArr):
     xMat = np.mat(xArr)
     yMat = np.mat(yArr).T
@@ -96,9 +100,10 @@ def ridgeTest(xArr, yArr):
     numTestPts = 30
     wMat = np.zeros((numTestPts, np.shape(xMat)[1]))
     for i in range(numTestPts):
-        ws = ridgeRegress(xMat, yMat, np.exp(i-10))
+        ws = ridgeRegress(xMat, yMat, np.exp(i - 10))
         wMat[i, :] = ws.T
     return wMat
+
 
 def stageWise(xArr, yArr, eps=0.1, numIt=100):
     """
@@ -136,7 +141,6 @@ def stageWise(xArr, yArr, eps=0.1, numIt=100):
         ws = wsMax.copy()
         returnMat[i, :] = ws.T
     return returnMat
-
 
 
 """
