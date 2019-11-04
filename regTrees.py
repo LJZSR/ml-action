@@ -11,6 +11,29 @@ def loadDataSet(fileName):
     return dataList
 
 
+def linearSolve(dataSet):
+    m, n = np.shape(dataSet)
+    X = np.mat(np.ones((m, n)))
+    Y = np.mat(np.zeros((m, 1)))
+    X[:, 1:n] = dataSet[:, 0:n-1]
+    Y = dataSet[:, -1]
+    xTx = X.T * X
+    if np.linalg.det(xTx) == 0.0:
+        print("Error!")
+    ws = xTx.I * (X.T * Y)
+    return ws, X, Y
+
+def modelLeaf(dataSet):
+    ws, X, Y = linearSolve(dataSet)
+    return ws
+
+
+def modelErr(dataSet):
+    ws, X, Y = linearSolve(dataSet)
+    yHat = X * ws
+    return np.sum(np.power(yHat - Y, 2))
+
+
 def regLeaf(dataSet):
     """
     生成叶节点
@@ -125,16 +148,22 @@ def prune(tree, testData):
     else:
         return tree
 
-
-# testMat = np.mat(np.eye(4))
-# mat0, mat1 = binSplitDataSet(testMat, 2, 0.5)
-# print(mat0)
-# print(mat1)
+"""
+testMat = np.mat(np.eye(4))
+mat0, mat1 = binSplitDataSet(testMat, 2, 0.5)
+print(mat0)
+print(mat1)
 
 myData = loadDataSet("regTrees/ex2.txt")
+myDataTest = loadDataSet("regTrees/ex2test.txt")
 myMat = np.mat(myData)
-myTree = createTree(myData)
+myMatTest = np.mat(myDataTest)
+myTree = createTree(myData, ops=(0,1))
 print(myTree)
-myTree1 = prune(myTree, myMat)
-print(myTree)
+myTree1 = prune(myTree, myMatTest)
+print(myTree1)
+"""
 
+myMat2 = np.mat(loadDataSet("regTrees/exp2.txt"))
+myTree = createTree(myMat2, modelLeaf, modelErr, (1, 10))
+print(myTree)
