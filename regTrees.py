@@ -1,0 +1,140 @@
+import numpy as np
+
+
+def loadDataSet(fileName):
+    dataList = []
+    fr = open(fileName)
+    for line in fr.readlines():
+        currLine = line.strip().split('\t')
+        fltLine = list(map(float, currLine))
+        dataList.append(fltLine)
+    return dataList
+
+
+def regLeaf(dataSet):
+    """
+    生成叶节点
+    :param dataSet:
+    :return:
+    """
+    return np.mean(dataSet[:, -1])
+
+
+def regErr(dataSet):
+    """
+    计算总方差
+    :param dataSet:
+    :return:
+    """
+    return np.var(dataSet[:, -1]) * np.shape(dataSet)[0]
+
+
+def binSplitDataSet(dataSet, feature, value):
+    """
+    切分数据集
+    :param dataSet: 待切分数据集
+    :param feature: 特征
+    :param value: 特征取值
+    :return:
+    """
+    dataSet = np.mat(dataSet)
+    mat0 = dataSet[np.nonzero(dataSet[:, feature] > value)[0], :]
+    mat1 = dataSet[np.nonzero(dataSet[:, feature] <= value)[0], :]
+    return mat0, mat1
+
+
+def chooseBestSplit(dataSet, leafType=regLeaf, errType=regErr, ops=(1,4)):
+    tolS = ops[0]
+    tolN = ops[1]
+    dataSet = np.mat(dataSet)
+    if len(set(dataSet[:,-1].T.tolist()[0])) == 1:
+        return None, leafType(dataSet)
+    m, n = np.shape(dataSet)
+    S = errType(dataSet)
+    bestS = float('inf')
+    bestIndex = 0
+    bestValue = 0
+    for featIndex in range(n-1):
+        for splitVal in set(dataSet[:, featIndex].T.tolist()[0]):
+            mat0, mat1 = binSplitDataSet(dataSet, featIndex, splitVal)
+            if (np.shape(mat0)[0] < tolN) or (np.shape(mat1)[0] < tolN):
+                continue
+            newS = errType(mat0) + errType(mat1)
+            if newS < bestS:
+                bestIndex = featIndex
+                bestValue = splitVal
+                bestS = newS
+    if (S - bestS) < tolS:
+        return None, leafType(dataSet)
+    if bestS == float('inf'):
+        return None, leafType(dataSet)
+    return bestIndex, bestValue
+
+
+
+def createTree(dataSet, leafType=regLeaf, errType=regErr, ops=(1,4)):
+    """
+    构建回归树
+    :param dataSet: 数据集
+    :param leafType: 建立叶节点的函数
+    :param errType: 误差计算函数
+    :param ops:
+    :return:
+    """
+    feat, val = chooseBestSplit(dataSet, leafType, errType, ops)
+    if feat == None:
+        return val
+    retTree = {}
+    retTree['spInd'] = feat
+    retTree['spVal'] = val
+    lSet, rSet = binSplitDataSet(dataSet, feat, val)
+    retTree['right'] = createTree(rSet, leafType, errType, ops)
+    retTree['left'] = createTree(lSet, leafType, errType, ops)
+    return retTree
+
+def isTree(obj):
+    return (type(obj).__name__ == 'dict')
+
+
+def getMean(tree):
+    if isTree(tree['right']):
+        tree['right'] = getMean(tree['right'])
+    if isTree(tree['left']):
+        tree['left'] = getMean(tree['left'])
+    return (tree['right'] + tree['left']) / 2
+
+def prune(tree, testData):
+    if np.shape(testData)[0] == 0:
+        return getMean(tree)
+    if (isTree(tree['right']) or isTree(tree['left'])):
+        lSet, rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+    if isTree(tree['right']):
+        prune(tree['right'], rSet)
+    if isTree(tree['left']):
+        prune(tree['left'], lSet)
+    if not isTree(tree['right']) and not isTree(tree['left']):
+        lSet, rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+        errNoMerge = np.sum(np.power(lSet[:, -1] - tree['left'], 2)) + np.sum(np.power(rSet[:, -1] - tree['left'], 2))
+        treeMean = (tree['left'] + tree['right']) / 2
+        errMerge = np.sum(np.power(testData[:, -1] - treeMean, 2))
+        if errMerge < errNoMerge:
+            print("Merging")
+            return treeMean
+        else:
+            return tree
+    else:
+        return tree
+
+
+# testMat = np.mat(np.eye(4))
+# mat0, mat1 = binSplitDataSet(testMat, 2, 0.5)
+# print(mat0)
+# print(mat1)
+
+myData = loadDataSet("regTrees/ex2.txt")
+myMat = np.mat(myData)
+myTree = createTree(myData)
+print(myTree)
+myTree1 = prune(myTree, myMat)
+print(myTree)
+
