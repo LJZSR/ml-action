@@ -148,6 +148,28 @@ def prune(tree, testData):
     else:
         return tree
 
+
+def regTreeEval(model, inDat):
+    return float(model)
+
+
+def modelTreeEval(model, inDat):
+    n = np.shape(inDat)[1]
+    X = np.mat(np.ones((1, n+1)))
+    X[:, 1:n+1] = inDat
+    return float(X * model)
+
+def treeForeCast(tree, inData, modeEval=regTreeEval):
+    if not isTree(tree):
+        return modeEval(tree, inData)
+    if (inData[tree['spInd']] > tree['spVal']):
+        if isTree(tree['left']):
+            return treeForeCast(tree['left'], inData, modeEval)
+        else:
+            return modeEval(tree['left'], inData)
+        
+
+
 """
 testMat = np.mat(np.eye(4))
 mat0, mat1 = binSplitDataSet(testMat, 2, 0.5)
