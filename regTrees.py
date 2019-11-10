@@ -163,11 +163,18 @@ def treeForeCast(tree, inData, modeEval=regTreeEval):
     if not isTree(tree):
         return modeEval(tree, inData)
     if (inData[tree['spInd']] > tree['spVal']):
-        if isTree(tree['left']):
-            return treeForeCast(tree['left'], inData, modeEval)
-        else:
-            return modeEval(tree['left'], inData)
-        
+        return treeForeCast(tree['left'], inData, modeEval)
+    else:
+        return treeForeCast(tree['right'], inData, modeEval)
+
+def createForeCast(tree, testData, modEval=regTreeEval):
+    m = np.shape(testData)[0]
+    yHat = np.zeros((m, 1))
+    for i in range(m):
+        yHat[i, 0] = treeForeCast(tree, testData[i, :], modEval)
+    return yHat
+
+
 
 
 """
@@ -186,6 +193,25 @@ myTree1 = prune(myTree, myMatTest)
 print(myTree1)
 """
 
+"""
 myMat2 = np.mat(loadDataSet("regTrees/exp2.txt"))
 myTree = createTree(myMat2, modelLeaf, modelErr, (1, 10))
-print(myTree)
+print(myTree['left'])
+"""
+
+trainMat = np.mat(loadDataSet("regTrees/bikeSpeedVsIq_train.txt"))
+testMat = np.mat(loadDataSet("regTrees/bikeSpeedVsIq_test.txt"))
+myTree = createTree(trainMat, ops=(1, 20))
+yHat = createForeCast(myTree, testMat[:, 0])
+print(np.corrcoef(yHat, testMat[:, 1], rowvar=0))
+
+myModelTree = createTree(trainMat, modelLeaf, modelErr, (1, 20))
+yHat = createForeCast(myModelTree, testMat[:, 0], modelTreeEval)
+print(np.corrcoef(yHat, testMat[:, 1], rowvar=0))
+
+ws, X, y = linearSolve(trainMat)
+yHat = []
+for i in range(np.shape(testMat)[0]):
+    yHat.append(testMat[i, 0] * ws[1, 0] + ws[0, 0])
+
+print(np.corrcoef(yHat, testMat[:, 1], rowvar=0))
